@@ -1,0 +1,5 @@
+streamlit
+togglPy
+todoist_api_python
+streamlit-authenticator
+streamlit-tags

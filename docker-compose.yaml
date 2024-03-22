@@ -1,0 +1,16 @@
+version: '3'
+services:
+  app:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - http_proxy=
+      - https_proxy=
+      - HTTP_PROXY=
+      - HTTPS_PROXY=
+      - TOGGL_API=${TOGGL_API}
+      - TODOIST_API=${TODOIST_API}
+    network_mode: bridge
+    volumes:
+      - .:/app # to mount json and yaml file
