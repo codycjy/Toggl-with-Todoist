@@ -1,0 +1,9 @@
+credentials:
+  usernames:
+    username:
+      name: username 
+      password: # generate by streamlit_authenticator
+cookie:
+  expiry_days: 30
+  key: random_signature_key # Must be string
+  name: random_cookie_name
