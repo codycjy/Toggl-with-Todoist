@@ -44,7 +44,8 @@ def get_workspace_id():
 def get_all_entries():
     sess = get_session()
     workspace_id = get_workspace_id()
-    response = sess.get( "https://api.track.toggl.com/api/v9/projects/"+f"{workspace_id}")
+    response = sess.get(
+        "https://api.track.toggl.com/api/v9/projects/"+f"{workspace_id}")
     time_entry_url = "https://api.track.toggl.com/api/v9/me/time_entries"
     response = sess.get(time_entry_url)
     df = pd.DataFrame(response.json())
@@ -126,8 +127,7 @@ def start_new_entry(description, project_id, **kwargs):
 
 def stop_current_entry(workspace_id, time_entry_id):
     sess = get_session()
-    entry_url = f"https://api.track.toggl.com/api/v9/workspaces/{workspace_id}\
-                /time_entries/{time_entry_id}/stop"
+    entry_url = f"https://api.track.toggl.com/api/v9/workspaces/{workspace_id}/time_entries/{time_entry_id}/stop"
     response = sess.patch(entry_url)
     response.raise_for_status()
     return response.json()

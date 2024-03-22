@@ -70,6 +70,7 @@ def current_entry_panel():
         entry_id = st.session_state.toggl_status['id']
         toggl.stop_current_entry(workspace_id, entry_id)
         st.session_state.toggl_status = toggl.get_current_entry()
+        st.rerun()
 
     st.write(f"Description: {status['description']}")
     start_time, duration_minutes = utils.parse_time(status)
