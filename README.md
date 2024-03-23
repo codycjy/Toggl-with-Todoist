@@ -14,9 +14,9 @@ This application integrates the strengths of two excellent tools: Toggl and Todo
 2. Download compose and config file
    ```bash
    mkdir config
-   wget -O config/docker-compose.yaml http://example.com/docker-compose.yaml
-   wget -O config/.env http://example.com/.env.example
-   wget -O config/pwd.example http://example.com/pwd.yaml.example
+   wget -O config/docker-compose.yaml https://github.com/codycjy/Toggl-with-Todoist/raw/main/docker-compose.yaml
+   wget -O config/.env https://github.com/codycjy/Toggl-with-Todoist/raw/main/.example.env
+   wget -O config/pwd.example https://github.com/codycjy/Toggl-with-Todoist/raw/main/pwd.yaml.example
 
    ```
 3. Fill in the API keys and user information in the `pwd.yaml` and `.env` files.

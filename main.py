@@ -11,13 +11,12 @@ import utils
 from todoist import TodoistController
 from components import app
 # Get auth info
-from const import CONFIG_PATH
+from const import CONFIG_PATH, MAP_PATH
 
-with open(CONFIG_PATH+"pwd.yaml", "r") as file:
+with open(os.path.join(CONFIG_PATH, "pwd.yaml"), "r") as file:
     config = yaml.safe_load(file)
-
-if os.path.exists('./project_label_map.json'):
-    with open('./project_label_map.json', 'r') as f:
+if os.path.exists(MAP_PATH):
+    with open(MAP_PATH, 'r') as f:
         project_label_map = json.load(f)
 else:
     project_label_map = []
@@ -130,6 +129,7 @@ def main_page():
         project_duration_chart(df, options, project_id, 1)
     with col2.container(border=True):
         project_duration_chart(df, options, project_id, 2)
+
 
 # Set auto refresh
 st_autorefresh(interval=15000,  key="fizzbuzzcounter")
