@@ -4,8 +4,7 @@ WORKDIR /app
 
 
 COPY requirements.txt .
-RUN pip3 install -r requirements.txt \
-    -i  https://mirrors.bfsu.edu.cn/pypi/web/simple
+RUN pip3 install -r requirements.txt 
 
 EXPOSE 8501
 

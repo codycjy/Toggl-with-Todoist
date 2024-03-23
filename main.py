@@ -4,11 +4,13 @@ import logging
 import streamlit as st
 from streamlit_tags import st_tags_sidebar
 from streamlit_authenticator import Authenticate
+from streamlit_autorefresh import st_autorefresh
 import yaml
 import toggl
 import utils
 from todoist import TodoistController
 from components import app
+# Get auth info
 with open("pwd.yaml", "r") as file:
     config = yaml.safe_load(file)
 
@@ -127,6 +129,8 @@ def main_page():
     with col2.container(border=True):
         project_duration_chart(df, options, project_id, 2)
 
+# Set auto refresh
+st_autorefresh(interval=15000,  key="fizzbuzzcounter")
 
 if authentication_status:
     main_page()
