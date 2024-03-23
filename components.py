@@ -14,11 +14,12 @@ def process_tasks(tasks):
 
 
 def app(tasks, api):
-    st.title('任务列表')
+    st.title('Task List')
     tasks_df = process_tasks(tasks)
 
     tasks_to_finish = []
 
+    need_rerun = False
     for _, task in tasks_df.iterrows():
         col1, col2, col3 = st.columns([1, 4, 1])
 
@@ -34,14 +35,13 @@ def app(tasks, api):
         with col3:
             if st.button('Go!', key=f'detail_{task["id"]}'):
                 api.start_toggl_entry(task)
-                st.rerun()
+                need_rerun = True
 
         if is_selected:
             tasks_to_finish.append(task['id'])
 
     for task_id in tasks_to_finish:
-        if api.finish_task(task_id):
-            st.write(f"Handling {task_id} succeed")
-    if tasks_to_finish:
-        st.write("rerun")
+        api.finish_task(task_id)
+
+    if tasks_to_finish or need_rerun:
         st.rerun()
