@@ -1,5 +1,10 @@
 from datetime import datetime
 import json
+
+
+from const import CONFIG_PATH
+
+
 def parse_time(data):
     start_time_str = data['start']
     start_time = datetime.fromisoformat(start_time_str.replace('Z', '+00:00'))
@@ -16,5 +21,7 @@ def parse_time(data):
 
     return start_time, duration_minutes
 
-def save_project_label_map(project_label_map:list):
-    json.dump(project_label_map,open("./project_label_map.json","w"))
+
+def save_project_label_map(project_label_map: list):
+    json.dump(project_label_map, open(
+        CONFIG_PATH+"./project_label_map.json", "w"))

@@ -13,4 +13,4 @@ services:
       - TODOIST_API=${TODOIST_API}
     network_mode: bridge
     volumes:
-      - .:/app # to mount json and yaml file
+      - ./config:/app/config # to mount json and yaml file

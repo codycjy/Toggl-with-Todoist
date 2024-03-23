@@ -11,7 +11,9 @@ import utils
 from todoist import TodoistController
 from components import app
 # Get auth info
-with open("pwd.yaml", "r") as file:
+from const import CONFIG_PATH
+
+with open(CONFIG_PATH+"pwd.yaml", "r") as file:
     config = yaml.safe_load(file)
 
 if os.path.exists('./project_label_map.json'):
