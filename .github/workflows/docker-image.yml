@@ -26,4 +26,4 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: saltfishc/toggl-with-todoist:latest
+          tags: codycjy/toggl-with-todoist:latest
