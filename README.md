@@ -9,38 +9,38 @@ This application integrates the strengths of two excellent tools: Toggl and Todo
 - Use the label map func which allow user add projects in toggl regardless of todoist project limitation.
 
 ## How to use
+### Docker compose(recommended)
+1. Obtain your API keys from [Todoist](https://todoist.com/) and [Toggl](https://toggl.com/).
+2. Download compose and config file
+   ```bash
+   mkdir config
+   wget -O config/docker-compose.yaml http://example.com/docker-compose.yaml
+   wget -O config/.env http://example.com/.env.example
+   wget -O config/pwd.example http://example.com/pwd.yaml.example
+
+   ```
+3. Fill in the API keys and user information in the `pwd.yaml` and `.env` files.
+4. Launch the application using Docker:
+   ```bash
+   docker compose up -d
+   ```
+5. Access the application at `http://localhost:8501`.
+
 ### Run it directly
 1. Install requirements
    ```bash
    pip install -r requirements.txt
    ```
-2. Set env
+2. Obtain your API keys from [Todoist](https://todoist.com/) and [Toggl](https://toggl.com/).
+3. Set env
    ```bash
    export TOGGL_API=YOUR_API
    export TODOIST_API=YOUR_API
    ```
-3. Run the app
+4. Run the app
    ```bash
    streamlit run main.py
    ```
-
-### Docker compose
-1. Obtain your API keys from [Todoist](https://todoist.com/) and [Toggl](https://toggl.com/).
-2. Clone the repository:
-   ```bash
-   git clone https://github.com/codycjy/Toggl-with-Todoist.git
-   ```
-3. Copy the example configuration files and rename them:
-   ```
-   cp pwd.yaml.example pwd.yaml
-   cp .env.example .env
-   ```
-4. Fill in the API keys and user information in the `pwd.yaml` and `.env` files.
-5. Launch the application using Docker:
-   ```bash
-   docker compose up -d
-   ```
-6. Access the application at `http://localhost:8501`.
 
 # TODO
 - [ ] Better UI 
