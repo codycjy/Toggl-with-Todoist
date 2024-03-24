@@ -80,8 +80,7 @@ def task_list(tasks, api):
 
 
 def current_entry_panel():
-    if 'toggl_status' not in st.session_state:
-        st.session_state.toggl_status = toggl.get_current_entry()
+    st.session_state.toggl_status = toggl.get_current_entry()
 
     st.write("Toggl Current Status")
     status = st.session_state.toggl_status

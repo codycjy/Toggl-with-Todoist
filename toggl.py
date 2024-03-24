@@ -11,6 +11,8 @@ import streamlit as st
 
 
 TOGGL_API_ENDPOINT = "https://api.track.toggl.com/api/v9"
+
+
 def get_session():
     api_key = os.getenv("TOGGL_API", "")
     if not api_key:
@@ -87,6 +89,7 @@ def filter_project(df, project_id):
 def get_current_entry():
     sess = get_session()
     entry_url = f"{TOGGL_API_ENDPOINT}/me/time_entries/current"
+    logging.info("Getting current entry")
     response = sess.get(entry_url)
     if response.status_code != 200:
         return {}
@@ -111,6 +114,7 @@ def start_new_entry(description, project_id, **kwargs):
 
     }
     data.update(kwargs)
+    logging.info(f"Starting new entry {description}")
     response = sess.post(entry_url, json=data)
     if response.status_code != 200:
         st.write(response.text)
@@ -120,8 +124,11 @@ def start_new_entry(description, project_id, **kwargs):
 def stop_current_entry(workspace_id, time_entry_id):
     sess = get_session()
     entry_url = f"{TOGGL_API_ENDPOINT}/workspaces/{workspace_id}/time_entries/{time_entry_id}/stop"
+    logging.info(f"Stopping current entry ID:{time_entry_id}")
     response = sess.patch(entry_url)
-    response.raise_for_status()
+    if response.status_code != 200:
+        logging.error(response.text)
+        return {}
     return response.json()
 
 
@@ -144,6 +151,7 @@ def find_project_id_by_name(project_name, all_projects):
 def get_all_projects():
     sess = get_session()
     workspace_id = get_workspace_id()
+    logging.info(f"Getting all projects for workspace {workspace_id}")
     url = f"{TOGGL_API_ENDPOINT}/workspaces/{workspace_id}/projects"
     response = sess.get(url)
     return response.json()
@@ -152,6 +160,7 @@ def get_all_projects():
 def create_new_project(name):
     sess = get_session()
     workspace_id = get_workspace_id()
+    logging.info(f"Creating new project {name}")
     url = f"{TOGGL_API_ENDPOINT}/workspaces/{workspace_id}/projects"
     data = {
         "name": name,
@@ -170,7 +179,7 @@ def get_project_id_by_name(name):
 
 
 def save_project_label_map(project_label_map: list):
-    with open("./project_label_map.json", "w",encoding="utf-8") as f:
+    with open("./project_label_map.json", "w", encoding="utf-8") as f:
         json.dump(project_label_map, f)
 
 

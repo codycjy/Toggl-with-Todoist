@@ -19,6 +19,7 @@ class TodoistController:
         self.label_project_map = label_project_map
 
     def finish_task(self, task_id) -> bool:
+        logging.info(f"Finish task {task_id}")
         return self.api.close_task(task_id=task_id)
 
     def get_all_tasks(self):
@@ -36,6 +37,7 @@ class TodoistController:
                               tags=task['labels'],
                               pid=pid,
                               )
+        logging.info(f"Start toggl entry for {task['content']}")
         st.rerun()
 
 
