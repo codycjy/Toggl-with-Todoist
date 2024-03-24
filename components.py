@@ -1,4 +1,4 @@
-import time
+import logging
 from datetime import datetime, timedelta
 import streamlit as st
 import pandas as pd
@@ -37,7 +37,7 @@ def process_tasks(tasks, filter_str=None):
     return pd.DataFrame(processed_data)
 
 
-def task_list(tasks, api):
+def task_list(tasks, api): # TODO: better logic
     st.title('Task List')
     filter_option = st.selectbox(
         "Time filter",
@@ -49,17 +49,20 @@ def task_list(tasks, api):
 
     tasks_df = process_tasks(tasks, filter_option)
 
-    tasks_to_finish = []
+    if st.session_state.get("tasks_to_finish") is None:
+        st.session_state.tasks_to_finish = []
 
+    st.write(tasks_df)
     need_rerun = False
     for _, task in tasks_df.iterrows():
         col1, col2, col3 = st.columns([1, 4, 1])
 
-        t = int(time.time())
         with col1:
-            is_selected = st.checkbox(
-                'Select Task', key=f'select_{task["id"]}_{t}', label_visibility='collapsed')
-            # use t to identify recurrent task
+            is_selected = st.checkbox('Select Task',
+                                      key=f'select_{task["id"]}_{task["due"]}',
+                                      label_visibility='collapsed')
+            if is_selected:
+                st.session_state.tasks_to_finish.append(task['id'])
 
         with col2:
             st.text(f"{task['due']}    {task['content']}")
@@ -69,13 +72,13 @@ def task_list(tasks, api):
                 api.start_toggl_entry(task)
                 need_rerun = True
 
-        if is_selected:
-            tasks_to_finish.append(task['id'])
 
-    for task_id in tasks_to_finish:
+    logging.debug(f"tasks id:{st.session_state.tasks_to_finish}")
+    for task_id in st.session_state.tasks_to_finish:
         api.finish_task(task_id)
 
-    if tasks_to_finish or need_rerun:
+    if st.session_state.tasks_to_finish or need_rerun:
+        st.session_state.tasks_to_finish = []
         st.rerun()
 
 
