@@ -2,8 +2,8 @@ name: ci
 
 on:
   push:
-    branches:
-      - 'main'
+    tags:
+      - '*'
 
 jobs:
   docker:
@@ -26,4 +26,5 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: codycjy/toggl-with-todoist:latest
+          tags: codycjy/toggl-with-todoist:${{ github.ref_name }}
+
