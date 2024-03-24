@@ -13,6 +13,12 @@ from components import daily_duration_chart, task_list, current_entry_panel, pro
 from components import timer
 from const import CONFIG_PATH, MAP_PATH
 
+st.set_page_config(
+    page_title="Toggl with Todoist",
+    page_icon=":bar_chart:",
+    initial_sidebar_state="expanded",
+)
+
 # Get auth info
 with open(os.path.join(CONFIG_PATH, "pwd.yaml"), "r",encoding="utf-8") as file:
     config = yaml.safe_load(file)

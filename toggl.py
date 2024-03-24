@@ -170,7 +170,8 @@ def get_project_id_by_name(name):
 
 
 def save_project_label_map(project_label_map: list):
-    json.dump(project_label_map, open("./project_label_map.json", "w"))
+    with open("./project_label_map.json", "w",encoding="utf-8") as f:
+        json.dump(project_label_map, f)
 
 
 if __name__ == "__main__":
