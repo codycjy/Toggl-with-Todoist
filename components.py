@@ -52,7 +52,6 @@ def task_list(tasks, api): # TODO: better logic
     if st.session_state.get("tasks_to_finish") is None:
         st.session_state.tasks_to_finish = []
 
-    st.write(tasks_df)
     need_rerun = False
     for _, task in tasks_df.iterrows():
         col1, col2, col3 = st.columns([1, 4, 1])
