@@ -1,12 +1,14 @@
 import logging
+from typing import List
 from datetime import datetime, timedelta
 import streamlit as st
 import pandas as pd
+from todoist_api_python.models import Task
 import toggl
 import utils
 
 
-def process_tasks(tasks, filter_str=None):
+def process_tasks(tasks: List[Task], filter_str=None):
     processed_data = []
     now = datetime.now()
 
@@ -14,6 +16,8 @@ def process_tasks(tasks, filter_str=None):
         task_dict = task.to_dict()
         due = task_dict.get('due')
         due_date = due['date'] if due and 'date' in due else None
+        if task.is_completed:
+            continue
 
         if due_date:
             due_datetime = datetime.strptime(due_date, '%Y-%m-%d')
@@ -37,7 +41,7 @@ def process_tasks(tasks, filter_str=None):
     return pd.DataFrame(processed_data)
 
 
-def task_list(tasks, api): # TODO: better logic
+def task_list(tasks, api):  # TODO: better logic
     st.title('Task List')
     filter_option = st.selectbox(
         "Time filter",
@@ -49,9 +53,6 @@ def task_list(tasks, api): # TODO: better logic
 
     tasks_df = process_tasks(tasks, filter_option)
 
-    if st.session_state.get("tasks_to_finish") is None:
-        st.session_state.tasks_to_finish = []
-
     need_rerun = False
     for _, task in tasks_df.iterrows():
         col1, col2, col3 = st.columns([1, 4, 1])
@@ -61,7 +62,9 @@ def task_list(tasks, api): # TODO: better logic
                                       key=f'select_{task["id"]}_{task["due"]}',
                                       label_visibility='collapsed')
             if is_selected:
-                st.session_state.tasks_to_finish.append(task['id'])
+                logging.info(f"Select {task['content']} id: {task['id']}")
+                api.finish_task(task['id'])
+                need_rerun = True
 
         with col2:
             st.text(f"{task['due']}    {task['content']}")
@@ -71,13 +74,7 @@ def task_list(tasks, api): # TODO: better logic
                 api.start_toggl_entry(task)
                 need_rerun = True
 
-
-    logging.debug(f"tasks id:{st.session_state.tasks_to_finish}")
-    for task_id in st.session_state.tasks_to_finish:
-        api.finish_task(task_id)
-
-    if st.session_state.tasks_to_finish or need_rerun:
-        st.session_state.tasks_to_finish = []
+    if need_rerun:
         st.rerun()
 
 
