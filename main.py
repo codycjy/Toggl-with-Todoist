@@ -9,14 +9,15 @@ import yaml
 import toggl
 import utils
 from todoist import TodoistController
-from components import app
-# Get auth info
+from components import daily_duration_chart, task_list, current_entry_panel, project_duration_chart
+from components import timer
 from const import CONFIG_PATH, MAP_PATH
 
-with open(os.path.join(CONFIG_PATH, "pwd.yaml"), "r") as file:
+# Get auth info
+with open(os.path.join(CONFIG_PATH, "pwd.yaml"), "r",encoding="utf-8") as file:
     config = yaml.safe_load(file)
 if os.path.exists(MAP_PATH):
-    with open(MAP_PATH, 'r') as f:
+    with open(MAP_PATH, 'r',encoding="utf-8") as f:
         project_label_map = json.load(f)
 else:
     project_label_map = []
@@ -33,63 +34,14 @@ name, authentication_status, username = authenticator.login()
 api = TodoistController()
 if authentication_status:
     st.title('Toggl Dashboard')
-elif authentication_status == False:
+elif authentication_status is False:
     st.error('Username/password is incorrect')
 elif authentication_status is None:
     st.warning('Please enter your username and password')
 
 logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s',
+                format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s',
                     )
-
-
-def project_duration_chart(df, options, project_id, index):
-    project_for_chart = st.selectbox(
-        "Select Project for Chart", options, key="chart_project_select_"+str(index),
-        index=index-1
-
-    )
-    selected_project_id = project_id[project_for_chart]
-
-    df = toggl.filter_project(df, selected_project_id)
-
-    daily_duration = df.groupby('date')['duration'].sum().reset_index()
-
-    st.write("Project Minutes Spent")
-    st.line_chart(daily_duration.set_index('date'), use_container_width=True)
-
-
-def current_entry_panel():
-    if 'toggl_status' not in st.session_state:
-        st.session_state.toggl_status = toggl.get_current_entry()
-
-    st.write("Toggl Current Status")
-    status = st.session_state.toggl_status
-    if not status:
-        st.write("No current entry, start a new one?")
-        return
-    if st.button("Stop"):
-        workspace_id = st.session_state.toggl_status['workspace_id']
-        entry_id = st.session_state.toggl_status['id']
-        toggl.stop_current_entry(workspace_id, entry_id)
-        st.session_state.toggl_status = toggl.get_current_entry()
-        st.rerun()
-
-    st.write(f"Description: {status['description']}")
-    start_time, duration_minutes = utils.parse_time(status)
-    st.write(f"Start time: {start_time.strftime('%Y-%m-%d %H:%M')}")
-    st.write(f"Duration: {duration_minutes} minutes")
-    st.session_state.toggl_status = toggl.get_current_entry()
-
-
-def timer(options, project_id):
-    form = st.form("Start a Timer")
-    description = form.text_input("Description")
-    project = form.selectbox("Project", options)
-    submmited = form.form_submit_button('Start')
-    if submmited:
-        toggl.start_new_entry(description, project_id[project])
-        st.rerun()
 
 
 def main_page():
@@ -118,12 +70,10 @@ def main_page():
             current_entry_panel()
 
     df = toggl.get_all_entries()
-    todoist = TodoistController()
-    tasks = todoist.get_all_tasks()
-    app(tasks, api)
-    daily_duration = df.groupby('date')['duration'].sum().reset_index()
-    st.write("Daily Minutes Spent")
-    st.line_chart(daily_duration.set_index('date'), use_container_width=True)
+    tasks = api.get_all_tasks()
+
+    task_list(tasks, api)
+    daily_duration_chart(df)
     col1, col2 = st.columns(2)
     with col1.container(border=True):
         project_duration_chart(df, options, project_id, 1)
@@ -132,7 +82,7 @@ def main_page():
 
 
 # Set auto refresh
-st_autorefresh(interval=15000,  key="fizzbuzzcounter")
+st_autorefresh(interval=30*1000,  key="fizzbuzzcounter")
 
 if authentication_status:
     main_page()

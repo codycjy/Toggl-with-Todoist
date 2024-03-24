@@ -33,9 +33,9 @@ class TodoistController:
                 break
         pid = toggl.get_project_id_by_name(project_name)
         toggl.start_new_entry(task['content'], task['id'],
-                             tags=task['labels'],
-                             pid=pid,
-                             )
+                              tags=task['labels'],
+                              pid=pid,
+                              )
         st.rerun()
 
 
