@@ -27,4 +27,4 @@ jobs:
         with:
           push: true
           tags: codycjy/toggl-with-todoist:${{ github.ref_name }}
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64,linux/arm64,darwin/amd64,darwin/arm64
