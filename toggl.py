@@ -1,7 +1,7 @@
 import logging
 import time
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from requests.auth import HTTPBasicAuth
 import requests
@@ -37,11 +37,11 @@ class Toggl:
         workspace_id = data[0]['id']
         return workspace_id
 
-    def get_all_entries(self):
-        sess = self.sess
-        workspace_id = self.get_workspace_id()
-        response = sess.get(
-            f"{TOGGL_API_ENDPOINT}/projects/"+f"{workspace_id}")
+    @st.cache_data
+    def get_all_entries(_self):
+        sess = _self.sess
+        workspace_id = _self.get_workspace_id()
+        response = sess.get(f"{TOGGL_API_ENDPOINT}/projects/{workspace_id}")
         time_entry_url = f"{TOGGL_API_ENDPOINT}/me/time_entries"
         response = sess.get(time_entry_url)
         df = pd.DataFrame(response.json())
@@ -54,21 +54,27 @@ class Toggl:
 
         result_df = pd.DataFrame()
 
+        # Get the date range for the last 7 days including today
+        end_date = datetime.today().date()
+        start_date = end_date - timedelta(days=6)
+        all_dates = pd.date_range(start_date, end_date, freq='D').date
+
         for project_id in project_ids:
             project_df = df[df['project_id'] == project_id]
-            min_date = project_df['date'].min(
-            ) if not project_df['date'].empty else datetime.today().date()
-            max_date = project_df['date'].max(
-            ) if not project_df['date'].empty else datetime.today().date()
-            all_dates = pd.date_range(min_date, max_date, freq='D').date
 
-            missing_dates = set(all_dates) - set(project_df['date'])
+            # Find missing dates within the 7-day range
+            project_dates = set(project_df['date'])
+            missing_dates = set(all_dates) - project_dates
 
+            # Fill missing dates with zero duration
             missing_data = [{'project_id': project_id, 'date': date,
                              'duration': 0} for date in missing_dates]
             missing_df = pd.DataFrame(missing_data)
 
             project_df = pd.concat([project_df, missing_df], ignore_index=True)
+
+            # Ensure the DataFrame covers the 7-day span
+            project_df = project_df[project_df['date'].isin(all_dates)]
 
             result_df = pd.concat([result_df, project_df], ignore_index=True)
 

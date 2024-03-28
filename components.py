@@ -41,7 +41,7 @@ def process_tasks(tasks: List[Task], filter_str=None):
     return pd.DataFrame(processed_data)
 
 
-def task_list(tasks, api):  # TODO: better logic
+def task_list(tasks, api):
     st.title('Task List')
     filter_option = st.selectbox(
         "Time filter",
@@ -111,6 +111,9 @@ def project_duration_chart(toggl, df, options, project_id, index):
     df = toggl.filter_project(df, selected_project_id)
 
     daily_duration = df.groupby('date')['duration'].sum().reset_index()
+    if daily_duration.empty:
+        st.write(f"No data for Project: {project_for_chart}")
+        return
 
     st.write("Project Minutes Spent")
     st.line_chart(daily_duration.set_index('date'), use_container_width=True)
