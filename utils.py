@@ -1,5 +1,7 @@
 from datetime import datetime
 import json
+import os
+import streamlit as st
 
 
 from const import CONFIG_PATH
@@ -22,5 +24,18 @@ def parse_time(data):
 
 
 def save_project_label_map(project_label_map: list):
-    with open(CONFIG_PATH+"./project_label_map.json", "w",encoding="utf-8") as f:
+    json_path=os.path.join(CONFIG_PATH,"./project_label_map.json")
+    with open(json_path, "w", encoding="utf-8") as f:
         json.dump(project_label_map, f)
+
+
+def load_env():
+    toggle_api_key = os.getenv('TOGGL_API')
+    todoist_api_key = os.getenv('TODOIST_API')
+    if not (toggle_api_key and todoist_api_key):
+        st.error("Please set the TOGGL_APIand TODOIST_APIin env")
+        return {}
+    return {
+        'TOGGL_API': toggle_api_key,
+        'TODOIST_API': todoist_api_key,
+    }

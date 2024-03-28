@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import streamlit as st
 import pandas as pd
 from todoist_api_python.models import Task
-import toggl
+from toggl import Toggl
 import utils
 
 
@@ -78,7 +78,7 @@ def task_list(tasks, api):  # TODO: better logic
         st.rerun()
 
 
-def current_entry_panel():
+def current_entry_panel(toggl: Toggl):
     st.session_state.toggl_status = toggl.get_current_entry()
 
     st.write("Toggl Current Status")
@@ -100,7 +100,7 @@ def current_entry_panel():
     st.session_state.toggl_status = toggl.get_current_entry()
 
 
-def project_duration_chart(df, options, project_id, index):
+def project_duration_chart(toggl, df, options, project_id, index):
     project_for_chart = st.selectbox(
         "Select Project for Chart", options, key="chart_project_select_"+str(index),
         index=index-1
@@ -116,7 +116,7 @@ def project_duration_chart(df, options, project_id, index):
     st.line_chart(daily_duration.set_index('date'), use_container_width=True)
 
 
-def timer(options, project_id):
+def timer(toggl, options, project_id):
     form = st.form("Start a Timer")
     description = form.text_input("Description")
     project = form.selectbox("Project", options)

@@ -1,6 +1,5 @@
 import logging
 import time
-import os
 import json
 from datetime import datetime
 
@@ -13,169 +12,153 @@ import streamlit as st
 TOGGL_API_ENDPOINT = "https://api.track.toggl.com/api/v9"
 
 
-def get_session():
-    api_key = os.getenv("TOGGL_API", "")
-    if not api_key:
-        logging.error("NO TOGGL_API KEY FOUND")
-    sess = requests.session()
-    sess.auth = HTTPBasicAuth(api_key, "api_token")
-    return sess
+class Toggl:
+    def __init__(self, api_key) -> None:
+        sess = requests.session()
+        sess.auth = HTTPBasicAuth(api_key, "api_token")
+        self.sess = sess
 
+    @st.cache_data
+    def get_workspace_project(_self):
+        sess = _self.sess
+        workspace_id = _self.get_workspace_id()
+        url = f"{TOGGL_API_ENDPOINT}/workspaces/{workspace_id}/projects"
+        response = sess.get(url)
+        return response.json()
 
-@st.cache_data
-def get_workspace_project():
-    sess = get_session()
-    workspace_id = get_workspace_id()
-    url = f"{TOGGL_API_ENDPOINT}/workspaces/{workspace_id}/projects"
-    sess = get_session()
-    response = sess.get(url)
-    return response.json()
+    @st.cache_data
+    def get_workspace_id(_self):
+        workspace_url = f"{TOGGL_API_ENDPOINT}/workspaces"
+        sess = _self.sess
+        response = sess.get(workspace_url)
+        if response.status_code != 200:
+            st.warning("Failed to get workspace ID")
+        data = response.json()
+        workspace_id = data[0]['id']
+        return workspace_id
 
+    def get_all_entries(self):
+        sess = self.sess
+        workspace_id = self.get_workspace_id()
+        response = sess.get(
+            f"{TOGGL_API_ENDPOINT}/projects/"+f"{workspace_id}")
+        time_entry_url = f"{TOGGL_API_ENDPOINT}/me/time_entries"
+        response = sess.get(time_entry_url)
+        df = pd.DataFrame(response.json())
+        df['start'] = pd.to_datetime(df['start'])
+        df['date'] = df['start'].dt.date
+        df['duration'] = df['duration'] / 60
+        df = df[df['duration'] > 0]
 
-@st.cache_data
-def get_workspace_id():
-    workspace_url = f"{TOGGL_API_ENDPOINT}/workspaces"
-    sess = get_session()
-    response = sess.get(workspace_url)
-    data = response.json()
-    workspace_id = data[0]['id']
-    return workspace_id
+        project_ids = df['project_id'].unique()
 
-# @st.cache_data
+        result_df = pd.DataFrame()
 
+        for project_id in project_ids:
+            project_df = df[df['project_id'] == project_id]
+            min_date = project_df['date'].min(
+            ) if not project_df['date'].empty else datetime.today().date()
+            max_date = project_df['date'].max(
+            ) if not project_df['date'].empty else datetime.today().date()
+            all_dates = pd.date_range(min_date, max_date, freq='D').date
 
-def get_all_entries():
-    sess = get_session()
-    workspace_id = get_workspace_id()
-    response = sess.get(
-        f"{TOGGL_API_ENDPOINT}/projects/"+f"{workspace_id}")
-    time_entry_url = f"{TOGGL_API_ENDPOINT}/me/time_entries"
-    response = sess.get(time_entry_url)
-    df = pd.DataFrame(response.json())
-    df['start'] = pd.to_datetime(df['start'])
-    df['date'] = df['start'].dt.date
-    df['duration'] = df['duration'] / 60
-    df = df[df['duration'] > 0]
+            missing_dates = set(all_dates) - set(project_df['date'])
 
-    project_ids = df['project_id'].unique()
+            missing_data = [{'project_id': project_id, 'date': date,
+                             'duration': 0} for date in missing_dates]
+            missing_df = pd.DataFrame(missing_data)
 
-    result_df = pd.DataFrame()
+            project_df = pd.concat([project_df, missing_df], ignore_index=True)
 
-    for project_id in project_ids:
-        project_df = df[df['project_id'] == project_id]
-        min_date = project_df['date'].min(
-        ) if not project_df['date'].empty else datetime.today().date()
-        max_date = project_df['date'].max(
-        ) if not project_df['date'].empty else datetime.today().date()
-        all_dates = pd.date_range(min_date, max_date, freq='D').date
+            result_df = pd.concat([result_df, project_df], ignore_index=True)
 
-        missing_dates = set(all_dates) - set(project_df['date'])
+        return result_df
 
-        missing_data = [{'project_id': project_id, 'date': date,
-                         'duration': 0} for date in missing_dates]
-        missing_df = pd.DataFrame(missing_data)
+    @staticmethod
+    def filter_project(df, project_id):
+        return df[df['project_id'] == project_id]
 
-        project_df = pd.concat([project_df, missing_df], ignore_index=True)
+    def get_current_entry(self):
+        sess = self.sess
+        entry_url = f"{TOGGL_API_ENDPOINT}/me/time_entries/current"
+        logging.info("Getting current entry")
+        response = sess.get(entry_url)
+        if response.status_code != 200:
+            return {}
+        return response.json()
 
-        result_df = pd.concat([result_df, project_df], ignore_index=True)
+    def start_new_entry(self, description, project_id, **kwargs):
+        sess = self.sess
+        workspace_id = self.get_workspace_id()
+        entry_url = f"{TOGGL_API_ENDPOINT}/workspaces/{workspace_id}/time_entries"
+        now = time.time()
+        start_rfc3339 = datetime.utcfromtimestamp(
+            now).isoformat(timespec="seconds") + "Z"
+        data = {
+            "description": description,
+            "duration": -1,  # * int(now),
+            "start": start_rfc3339,
+            "stop": None,
+            "pid": project_id,
+            "workspace_id": workspace_id,
+            "created_with": "python-toggl-api"
+        }
+        data.update(kwargs)
+        logging.info(f"Starting new entry {description}")
+        response = sess.post(entry_url, json=data)
+        return response.json()
 
-    return result_df
+    def stop_current_entry(self, workspace_id, time_entry_id):
+        sess = self.sess
+        entry_url = f"{TOGGL_API_ENDPOINT}/workspaces/{workspace_id}/time_entries/{time_entry_id}/stop"
+        logging.info(f"Stopping current entry ID:{time_entry_id}")
+        response = sess.patch(entry_url)
+        if response.status_code != 200:
+            logging.error(response.text)
+            return {}
+        return response.json()
 
+    def get_all_tags(self):
+        sess = self.sess
+        workspace_id = self.get_workspace_id()
+        url = f"{TOGGL_API_ENDPOINT}/workspaces/{workspace_id}/tags"
+        response = sess.get(url)
+        return response.json()
 
-def filter_project(df, project_id):
-    return df[df['project_id'] == project_id]
+    @staticmethod
+    def find_project_id_by_name(project_name, all_projects):
+        for project in all_projects:
+            if project['name'] == project_name:
+                return project['id']
+        return None
 
+    @st.cache_data
+    def get_all_projects(self):
+        sess = self.sess
+        workspace_id = self.get_workspace_id()
+        logging.info(f"Getting all projects for workspace {workspace_id}")
+        url = f"{TOGGL_API_ENDPOINT}/workspaces/{workspace_id}/projects"
+        response = sess.get(url)
+        return response.json()
 
-def get_current_entry():
-    sess = get_session()
-    entry_url = f"{TOGGL_API_ENDPOINT}/me/time_entries/current"
-    logging.info("Getting current entry")
-    response = sess.get(entry_url)
-    if response.status_code != 200:
-        return {}
-    return response.json()
+    def create_new_project(self, name):
+        sess = self.sess
+        workspace_id = self.get_workspace_id()
+        logging.info(f"Creating new project {name}")
+        url = f"{TOGGL_API_ENDPOINT}/workspaces/{workspace_id}/projects"
+        data = {
+            "name": name,
+            "wid": workspace_id
+        }
+        response = sess.post(url, json=data)
+        return response.json()
 
-
-def start_new_entry(description, project_id, **kwargs):
-    sess = get_session()
-    workspace_id = get_workspace_id()
-    entry_url = f"{TOGGL_API_ENDPOINT}/workspaces/{workspace_id}/time_entries"
-    now = time.time()
-    start_rfc3339 = datetime.utcfromtimestamp(
-        now).isoformat(timespec="seconds") + "Z"
-    data = {
-        "description": description,
-        "duration": -1,  # * int(now),
-        "start": start_rfc3339,
-        "stop": None,
-        "pid": project_id,
-        "workspace_id": workspace_id,
-        "created_with": "python-toggl-api"
-
-    }
-    data.update(kwargs)
-    logging.info(f"Starting new entry {description}")
-    response = sess.post(entry_url, json=data)
-    if response.status_code != 200:
-        st.write(response.text)
-    return response.json()
-
-
-def stop_current_entry(workspace_id, time_entry_id):
-    sess = get_session()
-    entry_url = f"{TOGGL_API_ENDPOINT}/workspaces/{workspace_id}/time_entries/{time_entry_id}/stop"
-    logging.info(f"Stopping current entry ID:{time_entry_id}")
-    response = sess.patch(entry_url)
-    if response.status_code != 200:
-        logging.error(response.text)
-        return {}
-    return response.json()
-
-
-def get_all_tags():
-    sess = get_session()
-    workspace_id = get_workspace_id()
-    url = f"{TOGGL_API_ENDPOINT}/workspaces/{workspace_id}/tags"
-    response = sess.get(url)
-    return response.json()
-
-
-def find_project_id_by_name(project_name, all_projects):
-    for project in all_projects:
-        if project['name'] == project_name:
-            return project['id']
-    return None
-
-
-@st.cache_data
-def get_all_projects():
-    sess = get_session()
-    workspace_id = get_workspace_id()
-    logging.info(f"Getting all projects for workspace {workspace_id}")
-    url = f"{TOGGL_API_ENDPOINT}/workspaces/{workspace_id}/projects"
-    response = sess.get(url)
-    return response.json()
-
-
-def create_new_project(name):
-    sess = get_session()
-    workspace_id = get_workspace_id()
-    logging.info(f"Creating new project {name}")
-    url = f"{TOGGL_API_ENDPOINT}/workspaces/{workspace_id}/projects"
-    data = {
-        "name": name,
-        "wid": workspace_id
-    }
-    response = sess.post(url, json=data)
-    return response.json()
-
-
-def get_project_id_by_name(name):
-    projects = get_all_projects()
-    pid = find_project_id_by_name(name, projects)
-    if pid:
-        return pid
-    return create_new_project(name)['id']
+    def get_project_id_by_name(self, name):
+        projects = self.get_all_projects()
+        pid = self.find_project_id_by_name(name, projects)
+        if pid:
+            return pid
+        return self.create_new_project(name)['id']
 
 
 def save_project_label_map(project_label_map: list):
