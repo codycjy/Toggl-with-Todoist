@@ -6,7 +6,7 @@ from streamlit_tags import st_tags_sidebar
 from streamlit_authenticator import Authenticate
 from streamlit_autorefresh import st_autorefresh
 import yaml
-import toggl
+from toggl import Toggl
 import utils
 from todoist import TodoistController
 from components import daily_duration_chart, task_list, current_entry_panel, project_duration_chart
@@ -20,37 +20,57 @@ st.set_page_config(
 )
 
 # Get auth info
-with open(os.path.join(CONFIG_PATH, "pwd.yaml"), "r",encoding="utf-8") as file:
-    config = yaml.safe_load(file)
+pwd_config_path = os.path.join(CONFIG_PATH, "pwd.yaml")
+pwd_config_exist = os.path.exists(pwd_config_path)
+if not pwd_config_exist:
+    st.error(
+        "Please create a pwd.yaml file following the instructions in the README.md file.")
+    authentication_status = None
+else:
+    with open(os.path.join(CONFIG_PATH, "pwd.yaml"), "r", encoding="utf-8") as file:
+        config = yaml.safe_load(file)
+    authenticator = Authenticate(
+        config['credentials'],
+        config['cookie']['name'],
+        config['cookie']['key'],
+        config['cookie']['expiry_days'],
+    )
+    name, authentication_status, username = authenticator.login()
+
+
 if os.path.exists(MAP_PATH):
-    with open(MAP_PATH, 'r',encoding="utf-8") as f:
+    with open(MAP_PATH, 'r', encoding="utf-8") as f:
         project_label_map = json.load(f)
 else:
     project_label_map = []
 
-authenticator = Authenticate(
-    config['credentials'],
-    config['cookie']['name'],
-    config['cookie']['key'],
-    config['cookie']['expiry_days'],
-)
-
-name, authentication_status, username = authenticator.login()
-
-api = TodoistController()
 if authentication_status:
     st.title('Toggl Dashboard')
 elif authentication_status is False:
     st.error('Username/password is incorrect')
-elif authentication_status is None:
-    st.warning('Please enter your username and password')
 
 logging.basicConfig(level=logging.INFO,
-                format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s',
+                    format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s',
                     )
 
+api_dict = utils.load_env()
 
-def main_page():
+if api_dict:
+
+    if 'toggl' not in st.session_state:
+        st.session_state.toggl = Toggl(api_dict['TOGGL_API'])
+
+    if 'todoist' not in st.session_state:
+        st.session_state.todoist = TodoistController(
+            api_dict['TODOIST_API'],
+            st.session_state.toggl
+        )
+
+else:
+    authentication_status = None
+
+
+def main_page(toggl: Toggl, todoist: TodoistController):
     global project_label_map
     project_id = {}
     options = []
@@ -60,7 +80,7 @@ def main_page():
         project_id[p['name']] = p['id']
         options.append(p['name'])
     with st.sidebar:
-        timer(options, project_id)
+        timer(toggl, options, project_id)
 
         with st.container(border=True):
             keyword = st_tags_sidebar(label='Tag Project Map',
@@ -70,25 +90,27 @@ def main_page():
             if keyword:
                 utils.save_project_label_map(keyword)
                 project_label_map = keyword
-                api.set_label_project_map(project_label_map)
+                todoist.set_label_project_map(project_label_map)
 
         with st.container(border=True):
-            current_entry_panel()
+            current_entry_panel(toggl)
 
     df = toggl.get_all_entries()
-    tasks = api.get_all_tasks()
+    tasks = todoist.get_all_tasks()
 
-    task_list(tasks, api)
+    task_list(tasks, todoist)
     daily_duration_chart(df)
     col1, col2 = st.columns(2)
     with col1.container(border=True):
-        project_duration_chart(df, options, project_id, 1)
+        project_duration_chart(toggl, df, options, project_id, 1)
     with col2.container(border=True):
-        project_duration_chart(df, options, project_id, 2)
+        project_duration_chart(toggl, df, options, project_id, 2)
 
 
-# Set auto refresh
+# Set auto refresh 30s
 st_autorefresh(interval=30*1000,  key="fizzbuzzcounter")
 
 if authentication_status:
-    main_page()
+    toggl = st.session_state.toggl
+    todoist = st.session_state.todoist
+    main_page(toggl, todoist)
