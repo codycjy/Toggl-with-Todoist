@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - '*'
+  pull_request:
+    branches:
+      - '*'
 
 jobs:
   docker:
@@ -25,6 +28,6 @@ jobs:
         name: Build and push
         uses: docker/build-push-action@v5
         with:
-          push: true
+          push: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
           tags: codycjy/toggl-with-todoist:${{ github.ref_name }}
           platforms: linux/amd64,linux/arm64
