@@ -26,5 +26,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: codycjy/toggl-with-todoist:${{ github.ref_name }}
+          tags: |
+            codycjy/toggl-with-todoist:${{ github.ref_name }}
+            codycjy/toggl-with-todoist:latest
           platforms: linux/amd64,linux/arm64
