@@ -139,9 +139,9 @@ class Toggl:
         return None
 
     @st.cache_data
-    def get_all_projects(self):
-        sess = self.sess
-        workspace_id = self.get_workspace_id()
+    def get_all_projects(_self):
+        sess = _self.sess
+        workspace_id = _self.get_workspace_id()
         logging.info(f"Getting all projects for workspace {workspace_id}")
         url = f"{TOGGL_API_ENDPOINT}/workspaces/{workspace_id}/projects"
         response = sess.get(url)
