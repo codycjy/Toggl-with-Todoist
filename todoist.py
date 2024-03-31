@@ -32,6 +32,7 @@ class TodoistController:
                                    tags=task['labels'],
                                    pid=pid,
                                    )
+        st.session_state.running_task = task['content']
         logging.info(f"Start toggl entry for {task['content']}")
         st.rerun()
 

@@ -55,7 +55,7 @@ def task_list(tasks, api):
 
     need_rerun = False
     for _, task in tasks_df.iterrows():
-        col1, col2, col3 = st.columns([1, 4, 1])
+        col1, col2,col3, col4 = st.columns([1, 1,8, 1])
 
         with col1:
             is_selected = st.checkbox('Select Task',
@@ -65,11 +65,14 @@ def task_list(tasks, api):
                 logging.info(f"Select {task['content']} id: {task['id']}")
                 api.finish_task(task['id'])
                 need_rerun = True
-
         with col2:
-            st.text(f"{task['due']}    {task['content']}")
+            if "running_task" in st.session_state and st.session_state.running_task == task['content']:
+                st.write(":hourglass_flowing_sand:")
 
         with col3:
+            st.text(f"{task['due']}    {task['content']}")
+
+        with col4:
             if st.button('Go!', key=f'detail_{task["id"]}'):
                 api.start_toggl_entry(task)
                 need_rerun = True
@@ -97,6 +100,7 @@ def current_entry_panel(toggl: Toggl):
     start_time, duration_minutes = utils.parse_time(status)
     st.write(f"Start time: {start_time.strftime('%Y-%m-%d %H:%M')}")
     st.write(f"Duration: {duration_minutes} minutes")
+    st.session_state.running_task = status['description']
     st.session_state.toggl_status = toggl.get_current_entry()
 
 
