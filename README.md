@@ -49,3 +49,4 @@ This application integrates the strengths of two excellent tools: Toggl and Todo
 
 # Contribution
 Welcome any kinds of contributions.
+Feel free to open an issue :)

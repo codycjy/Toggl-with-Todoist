@@ -53,8 +53,7 @@ elif authentication_status is False:
     st.error('Username/password is incorrect')
 
 logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(filename)s[line:%(lineno)d] \
-                    - %(levelname)s: %(message)s')
+                    format='%(asctime)s - %(filename)s[line:%(lineno)d] %(levelname)s: %(message)s')
 
 api_dict = utils.load_env()
 

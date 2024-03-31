@@ -127,8 +127,7 @@ class Toggl:
 
     def stop_current_entry(self, workspace_id, time_entry_id):
         sess = self.sess
-        entry_url = f"{TOGGL_API_ENDPOINT}/workspaces/{workspace_id}\
-        /time_entries/{time_entry_id}/stop"
+        entry_url = f"{TOGGL_API_ENDPOINT}/workspaces/{workspace_id}/time_entries/{time_entry_id}/stop"
         logging.info(f"Stopping current entry ID:{time_entry_id}")
         response = sess.patch(entry_url)
         if response.status_code != 200:

@@ -101,7 +101,6 @@ def current_entry_panel(toggl: Toggl):
     st.write(f"Start time: {start_time.strftime('%Y-%m-%d %H:%M')}")
     st.write(f"Duration: {duration_minutes} minutes")
     st.session_state.running_task = status['description']
-    st.session_state.toggl_status = toggl.get_current_entry()
 
 
 def project_duration_chart(toggl, df, options, project_id, index):
