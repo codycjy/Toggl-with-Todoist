@@ -33,7 +33,7 @@ def load_env():
     toggle_api_key = os.getenv('TOGGL_API')
     todoist_api_key = os.getenv('TODOIST_API')
     if not (toggle_api_key and todoist_api_key):
-        st.error("Please set the TOGGL_APIand TODOIST_APIin env")
+        st.error("Please set the TOGGL_API and TODOIST_API in env")
         return {}
     return {
         'TOGGL_API': toggle_api_key,

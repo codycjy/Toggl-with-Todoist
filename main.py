@@ -38,20 +38,23 @@ else:
     name, authentication_status, username = authenticator.login()
 
 
+# TODO: maybe add a lock for json?
 if os.path.exists(MAP_PATH):
     with open(MAP_PATH, 'r', encoding="utf-8") as f:
         project_label_map = json.load(f)
 else:
     project_label_map = []
 
+st.session_state.project_label_map = project_label_map
+
 if authentication_status:
-    st.title('Toggl Dashboard')
+    pass
 elif authentication_status is False:
     st.error('Username/password is incorrect')
 
 logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s',
-                    )
+                    format='%(asctime)s - %(filename)s[line:%(lineno)d] \
+                    - %(levelname)s: %(message)s')
 
 api_dict = utils.load_env()
 
@@ -72,13 +75,10 @@ else:
 
 def main_page(toggl: Toggl, todoist: TodoistController):
     global project_label_map
-    project_id = {}
-    options = []
-    projects = toggl.get_workspace_project()
+    df = toggl.get_all_entries()
+    tasks = todoist.get_all_tasks()
+    options, project_id = toggl.get_workspace_project()
 
-    for p in projects:
-        project_id[p['name']] = p['id']
-        options.append(p['name'])
     with st.sidebar:
         timer(toggl, options, project_id)
 
@@ -87,7 +87,9 @@ def main_page(toggl: Toggl, todoist: TodoistController):
                                       text='Press enter to add more',
                                       value=project_label_map,
                                       key="afrfae")
-            if keyword:
+            old_project_label_map = st.session_state.get(
+                'project_label_map', [])
+            if keyword != old_project_label_map:
                 utils.save_project_label_map(keyword)
                 project_label_map = keyword
                 todoist.set_label_project_map(project_label_map)
@@ -95,10 +97,8 @@ def main_page(toggl: Toggl, todoist: TodoistController):
         with st.container(border=True):
             current_entry_panel(toggl)
 
-    df = toggl.get_all_entries()
-    tasks = todoist.get_all_tasks()
-
     task_list(tasks, todoist)
+    st.title('Toggl Dashboard')
     daily_duration_chart(df)
     col1, col2 = st.columns(2)
     with col1.container(border=True):

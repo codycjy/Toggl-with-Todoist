@@ -44,7 +44,8 @@ This application integrates the strengths of two excellent tools: Toggl and Todo
 
 # TODO
 - [ ] Better UI 
-- [ ] Filter for Tasks
+- [ ] Save status in session for better usage
+- [x] Filter for Tasks
 
 # Contribution
 Welcome any kinds of contributions.

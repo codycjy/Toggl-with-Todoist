@@ -17,14 +17,25 @@ class Toggl:
         sess = requests.session()
         sess.auth = HTTPBasicAuth(api_key, "api_token")
         self.sess = sess
+        self.df = pd.DataFrame()
 
-    @st.cache_data
     def get_workspace_project(_self):
+        if len(_self.df) == 0:
+            _self.get_all_entries()
+        df = _self.df
+        df = df.dropna(subset=['description', 'project_id'])
+
+        project_ids = df['project_id'].unique().tolist()
+
         sess = _self.sess
         workspace_id = _self.get_workspace_id()
         url = f"{TOGGL_API_ENDPOINT}/workspaces/{workspace_id}/projects"
         response = sess.get(url)
-        return response.json()
+        projects = response.json()
+        project_name_map = {p['name']: p['id']
+                            for p in projects if p['id'] in project_ids}
+        project_name_list = list(project_name_map.keys())
+        return project_name_list, project_name_map
 
     @st.cache_data
     def get_workspace_id(_self):
@@ -37,7 +48,6 @@ class Toggl:
         workspace_id = data[0]['id']
         return workspace_id
 
-    @st.cache_data
     def get_all_entries(_self):
         sess = _self.sess
         workspace_id = _self.get_workspace_id()
@@ -77,6 +87,7 @@ class Toggl:
             project_df = project_df[project_df['date'].isin(all_dates)]
 
             result_df = pd.concat([result_df, project_df], ignore_index=True)
+        _self.df = result_df
 
         return result_df
 
@@ -116,7 +127,8 @@ class Toggl:
 
     def stop_current_entry(self, workspace_id, time_entry_id):
         sess = self.sess
-        entry_url = f"{TOGGL_API_ENDPOINT}/workspaces/{workspace_id}/time_entries/{time_entry_id}/stop"
+        entry_url = f"{TOGGL_API_ENDPOINT}/workspaces/{workspace_id}\
+        /time_entries/{time_entry_id}/stop"
         logging.info(f"Stopping current entry ID:{time_entry_id}")
         response = sess.patch(entry_url)
         if response.status_code != 200:

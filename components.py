@@ -104,9 +104,13 @@ def project_duration_chart(toggl, df, options, project_id, index):
     project_for_chart = st.selectbox(
         "Select Project for Chart", options, key="chart_project_select_"+str(index),
         index=index-1
-
     )
-    selected_project_id = project_id[project_for_chart]
+    try:
+        selected_project_id = project_id[project_for_chart]
+    except KeyError:
+        st.write(f"Project {project_for_chart} not found")
+        return
+
 
     df = toggl.filter_project(df, selected_project_id)
 

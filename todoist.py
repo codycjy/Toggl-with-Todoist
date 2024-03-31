@@ -5,12 +5,10 @@ from toggl import Toggl
 
 
 class TodoistController:
-    label_project_map = ["Beigene", "Exercise", "FinalPaper",
-                         "Japanese", "Photo", "Yaocheng", "Project"]
-
     def __init__(self, api_key, toggl: Toggl) -> None:
         self.api = TodoistAPI(api_key)
         self.toggl = toggl
+        self.label_project_map=[]
 
     def set_label_project_map(self, label_project_map):
         self.label_project_map = label_project_map
