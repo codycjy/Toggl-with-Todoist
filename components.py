@@ -55,7 +55,7 @@ def task_list(tasks, api):
 
     need_rerun = False
     for _, task in tasks_df.iterrows():
-        col1, col2,col3, col4 = st.columns([1, 1,8, 1])
+        col1, col2, col3, col4 = st.columns([1, 1, 8, 1])
 
         with col1:
             is_selected = st.checkbox('Select Task',
@@ -92,6 +92,7 @@ def current_entry_panel(toggl: Toggl):
     if st.button("Stop"):
         workspace_id = st.session_state.toggl_status['workspace_id']
         entry_id = st.session_state.toggl_status['id']
+        st.session_state.running_task = None
         toggl.stop_current_entry(workspace_id, entry_id)
         st.session_state.toggl_status = toggl.get_current_entry()
         st.rerun()
@@ -113,7 +114,6 @@ def project_duration_chart(toggl, df, options, project_id, index):
     except KeyError:
         st.write(f"Project {project_for_chart} not found")
         return
-
 
     df = toggl.filter_project(df, selected_project_id)
 
