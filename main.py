@@ -77,6 +77,7 @@ def main_page(toggl: Toggl, todoist: TodoistController):
     df = toggl.get_all_entries()
     tasks = todoist.get_all_tasks()
     options, project_id = toggl.get_workspace_project()
+    todoist.set_label_project_map(project_label_map)
 
     with st.sidebar:
         timer(toggl, options, project_id)
@@ -91,6 +92,7 @@ def main_page(toggl: Toggl, todoist: TodoistController):
             if keyword != old_project_label_map:
                 utils.save_project_label_map(keyword)
                 project_label_map = keyword
+                logging.info(f"Setting project_label_map: {project_label_map}")
                 todoist.set_label_project_map(project_label_map)
 
         with st.container(border=True):

@@ -98,7 +98,6 @@ class Toggl:
     def get_current_entry(self):
         sess = self.sess
         entry_url = f"{TOGGL_API_ENDPOINT}/me/time_entries/current"
-        logging.info("Getting current entry")
         response = sess.get(entry_url)
         if response.status_code != 200:
             return {}

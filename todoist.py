@@ -23,9 +23,11 @@ class TodoistController:
     def start_toggl_entry(self, task):
 
         project_name = self.api.get_project(task['project_id']).name
+        logging.info(f"label_project_map: {self.label_project_map}")
         for label in task['labels']:
             if label in self.label_project_map:
                 project_name = label
+                logging.info(f"Found label {label} in label_project_map")
                 break
         pid = self.toggl.get_project_id_by_name(project_name)
         self.toggl.start_new_entry(task['content'], task['id'],
